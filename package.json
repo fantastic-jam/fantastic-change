@@ -1,13 +1,15 @@
 {
   "name": "@fantastic-jam/fchange",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "bin": {
     "fchange": ".bin/fchange",
     "fcommit": ".bin/fcommit",
     "frelease": ".bin/frelease"
   },
-  "files": [".bin/"],
+  "files": [
+    ".bin/"
+  ],
   "scripts": {
     "build": "rolldown -c",
     "release": "pnpm run build && pnpm run release:exec",
@@ -38,7 +40,9 @@
     "pnpm": "10.15.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome"]
+    "onlyBuiltDependencies": [
+      "@biomejs/biome"
+    ]
   },
   "dependencies": {
     "picomatch": "^4.0.4",
