@@ -71,3 +71,30 @@ describe('validateCommitMessage — bypassPatterns', () => {
     expect(validateCommitMessage('bad message', DEFAULT_TYPES, [])).not.toBeNull();
   });
 });
+
+describe('validateCommitMessage — validScopes', () => {
+  const scopes = ['web', 'api'];
+
+  it('accepts a valid scope', () => {
+    expect(validateCommitMessage('feat(web): add search', DEFAULT_TYPES, [], scopes)).toBeNull();
+  });
+
+  it('rejects an unknown scope', () => {
+    expect(
+      validateCommitMessage('feat(cli): add search', DEFAULT_TYPES, [], scopes),
+    ).not.toBeNull();
+  });
+
+  it('includes valid scopes in the error message', () => {
+    const error = validateCommitMessage('feat(cli): add search', DEFAULT_TYPES, [], scopes);
+    expect(error).toContain('web, api');
+  });
+
+  it('allows no scope when validScopes is set', () => {
+    expect(validateCommitMessage('feat: add search', DEFAULT_TYPES, [], scopes)).toBeNull();
+  });
+
+  it('does not validate scopes when validScopes is null', () => {
+    expect(validateCommitMessage('feat(anything): add search', DEFAULT_TYPES, [], null)).toBeNull();
+  });
+});

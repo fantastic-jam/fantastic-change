@@ -112,8 +112,10 @@ if (rawArgs[0] === 'validate') {
     console.error('No fchange config found.\n  Run: fchange --init');
     process.exit(1);
   }
-  const types = foundCfg.config.types ?? DEFAULT_TYPES;
-  const error = validateCommitMessage(subject, types, foundCfg.config.bypassPatterns);
+  const { config, root } = foundCfg;
+  const types = config.types ?? DEFAULT_TYPES;
+  const validScopes = (config.folders?.length ?? 0) > 0 ? allNames(root, config) : null;
+  const error = validateCommitMessage(subject, types, config.bypassPatterns, validScopes);
   if (error) {
     console.error(error);
     process.exit(1);
@@ -159,8 +161,8 @@ const { values, positionals } = parseArgs({
 const pkg = values.pkg ?? null;
 const dryRun = values['dry-run'] ?? false;
 
-if (!pkg && hasFolders) {
-  console.error(`--pkg is required.\n  Available: ${allNames(root, config).join(', ')}`);
+if (pkg && hasFolders && !allNames(root, config).includes(pkg)) {
+  console.error(`Unknown package "${pkg}".\n  Available: ${allNames(root, config).join(', ')}`);
   process.exit(1);
 }
 
@@ -168,7 +170,7 @@ const [type, ...rest] = positionals;
 
 if (!type) {
   const usage = hasFolders
-    ? `fcommit <type> ["message"] --pkg <name>`
+    ? `fcommit <type> ["message"] [--pkg <name>]`
     : `fcommit <type> ["message"]`;
   console.error(`Usage: ${usage}\n  Types: ${types.join(', ')}`);
   process.exit(1);
@@ -184,7 +186,7 @@ const message = rest.length > 0 ? rest.join(' ') : openInEditor(ctx);
 
 if (!message) {
   const usage = hasFolders
-    ? `fcommit <type> "<message>" --pkg <name>`
+    ? `fcommit <type> "<message>" [--pkg <name>]`
     : `fcommit <type> "<message>"`;
   console.error(`Usage: ${usage}`);
   process.exit(1);
