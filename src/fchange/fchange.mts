@@ -60,6 +60,26 @@ if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
   process.exit(0);
 }
 
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(`\
+fchange <patch|minor|major> ["message"] [--pkg <name>]
+
+Prepend a versioned entry to CHANGELOG.md under ## [Unreleased].
+Opens $EDITOR if message is omitted.
+
+Options:
+  --pkg, -p <name>   Target package (required when folders are configured)
+  --version, -v      Print version
+  --help, -h         Show this help
+
+Subcommands:
+  --init             Create fchange.json in the current directory
+  completion bash    Print bash completion script
+
+Config: fchange.mjs, fchange.json, .fchangerc, or package.json "fchange" key`);
+  process.exit(0);
+}
+
 if (rawArgs[0] === '--init') {
   const initPath = path.join(process.cwd(), 'fchange.json');
   if (fs.existsSync(initPath)) {

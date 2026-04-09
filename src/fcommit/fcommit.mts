@@ -90,6 +90,27 @@ if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
   process.exit(0);
 }
 
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(`\
+fcommit <type> ["message"] [--pkg <name>] [--dry-run]
+
+Commit staged changes with a conventional commit message.
+Opens $EDITOR if message is omitted.
+
+Options:
+  --pkg, -p <name>   Scope the commit to a package
+  --dry-run, -n      Print the subject without committing
+  --version, -v      Print version
+  --help, -h         Show this help
+
+Subcommands:
+  validate <file>    Validate a commit-msg file (for use as a git hook)
+  completion bash    Print bash completion script
+
+Config: fchange.mjs, fchange.json, .fchangerc, or package.json "fchange" key`);
+  process.exit(0);
+}
+
 if (rawArgs[0] === 'completion') {
   handleCompletion(rawArgs[1] ?? 'bash');
   process.exit(0);

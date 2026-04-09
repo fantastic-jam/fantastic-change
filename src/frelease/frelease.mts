@@ -59,6 +59,28 @@ if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
   process.exit(0);
 }
 
+if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
+  console.log(`\
+frelease [--pkg <name>] [--dry-run]
+
+Promote ## [Unreleased] to a versioned heading in CHANGELOG.md and print the new version.
+The version is bumped by the highest level (major > minor > patch) among unreleased entries.
+
+Options:
+  --pkg, -p <name>   Target package (required when folders are configured)
+  --dry-run, -n      Print the version without writing
+  --version, -v      Print version
+  --help, -h         Show this help
+
+Subcommands:
+  changelog [ver]    Print release notes for the latest (or a specific) version
+  changelog-version  Print the latest released version string
+  completion bash    Print bash completion script
+
+Config: fchange.mjs, fchange.json, .fchangerc, or package.json "fchange" key`);
+  process.exit(0);
+}
+
 if (rawArgs[0] === 'completion') {
   handleCompletion(rawArgs[1] ?? 'bash');
   process.exit(0);
