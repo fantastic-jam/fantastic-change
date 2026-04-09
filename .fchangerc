@@ -1,0 +1,4 @@
+{
+  "commitFormat": "{type}({pkg}): {message}",
+  "types": ["feat", "fix", "chore", "docs", "refactor", "ci"]
+}

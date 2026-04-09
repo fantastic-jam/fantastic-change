@@ -1,0 +1,47 @@
+{
+  "name": "@fantastic-jam/fchange",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "fchange": ".bin/fchange",
+    "fcommit": ".bin/fcommit",
+    "frelease": ".bin/frelease"
+  },
+  "files": [".bin/"],
+  "scripts": {
+    "build": "rolldown -c",
+    "release": "pnpm run build && pnpm run release:exec",
+    "release:exec": "node --experimental-strip-types tools/release.mts",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit",
+    "fvalidate": "node --experimental-strip-types src/fcommit/fcommit.mts validate",
+    "prepare": "husky",
+    "prepublishOnly": "pnpm build",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
+    "@types/node": "^22.0.0",
+    "@types/picomatch": "^4.0.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260409.1",
+    "husky": "^9.1.7",
+    "rolldown": "^1.0.0-rc.15",
+    "vitest": "^4.1.4"
+  },
+  "engines": {
+    "node": ">=22.7.0"
+  },
+  "volta": {
+    "node": "22.18.0",
+    "pnpm": "10.15.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome"]
+  },
+  "dependencies": {
+    "picomatch": "^4.0.4",
+    "valibot": "^1.3.1"
+  }
+}

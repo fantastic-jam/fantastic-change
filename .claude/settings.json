@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(.bin/fcommit feat:*)",
+      "Bash(gh api:*)"
+    ]
+  }
+}

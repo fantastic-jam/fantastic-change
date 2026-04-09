@@ -1,0 +1,5 @@
+{
+  "folders": ["packages", "apps", "libs"],
+  "commitFormat": "{type}({pkg}): {message}",
+  "types": ["feat", "fix", "chore", "docs", "refactor", "style", "test", "ci", "build", "perf", "revert"]
+}
