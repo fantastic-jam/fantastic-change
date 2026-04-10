@@ -1,6 +1,10 @@
 {
   "name": "@fantastic-jam/fchange",
   "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fantastic-jam/fantastic-change"
+  },
   "type": "module",
   "bin": {
     "fchange": ".bin/fchange",
