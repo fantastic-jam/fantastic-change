@@ -11,6 +11,14 @@ describe('validateCommitMessage', () => {
     expect(validateCommitMessage('fix(auth): resolve token expiry', DEFAULT_TYPES)).toBeNull();
   });
 
+  it('accepts breaking change marker without scope', () => {
+    expect(validateCommitMessage('feat!: drop Node 18', DEFAULT_TYPES)).toBeNull();
+  });
+
+  it('accepts breaking change marker with scope', () => {
+    expect(validateCommitMessage('feat(api)!: remove v1 endpoints', DEFAULT_TYPES)).toBeNull();
+  });
+
   it('accepts custom types', () => {
     expect(validateCommitMessage('new: something', ['new', 'fix'])).toBeNull();
   });
@@ -46,6 +54,11 @@ describe('validateCommitMessage', () => {
   it('includes valid types in the error message', () => {
     const error = validateCommitMessage('bad: message', ['feat', 'fix']);
     expect(error).toContain('feat, fix');
+  });
+
+  it('includes [!] in the expected format hint', () => {
+    const error = validateCommitMessage('bad: message', ['feat']);
+    expect(error).toContain('[!]');
   });
 });
 

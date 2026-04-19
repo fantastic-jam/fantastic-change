@@ -24,13 +24,13 @@ export function validateCommitMessage(
   if (bypassPatterns.length > 0 && pm(bypassPatterns, { nocase: true })(subject)) return null;
 
   const typePattern = types.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const re = new RegExp(`^(${typePattern})(\\([^)]+\\))?:\\s+\\S`);
+  const re = new RegExp(`^(${typePattern})(\\([^)]+\\))?!?:\\s+\\S`);
 
   if (!re.test(subject)) {
     return [
       'Commit message does not match expected format.',
       `  Subject: ${subject}`,
-      '  Expected: <type>[(scope)]: <message>',
+      '  Expected: <type>[(scope)][!]: <message>',
       `  Valid types: ${types.join(', ')}`,
     ].join('\n');
   }

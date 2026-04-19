@@ -1,7 +1,8 @@
 /**
- * fchange [--pkg <name>] <patch|minor|major> ["message"]
+ * fchange [--pkg <name>] <type> ["message"]
  *
  * Prepends a change entry under [Unreleased] in the project's CHANGELOG.md.
+ * Types follow Keep a Changelog: added, changed, deprecated, removed, fixed, security.
  * Configure via fchange.mjs, fchange.json, .fchangerc, or package.json "fchange" key.
  *
  * Subcommands:
@@ -11,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { prependEntry } from '../libs/changelog.mts';
+import { prependEntry, type SectionType } from '../libs/changelog.mts';
 import { findRootAndConfig } from '../libs/config.mts';
 import {
   allNames,
@@ -30,7 +31,12 @@ function getVersion(): string {
   }
 }
 
-const LEVELS = ['patch', 'minor', 'major'];
+const SECTIONS = ['added', 'changed', 'deprecated', 'removed', 'fixed', 'security'] as const;
+type SectionInput = (typeof SECTIONS)[number];
+
+function toSectionType(input: SectionInput): SectionType {
+  return (input.charAt(0).toUpperCase() + input.slice(1)) as SectionType;
+}
 
 // ── Subcommands ───────────────────────────────────────────────────────────────
 
@@ -62,10 +68,18 @@ if (rawArgs.includes('--version') || rawArgs.includes('-v')) {
 
 if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(`\
-fchange <patch|minor|major> ["message"] [--pkg <name>]
+fchange <type> ["message"] [--pkg <name>]
 
-Prepend a versioned entry to CHANGELOG.md under ## [Unreleased].
+Prepend a change entry to CHANGELOG.md under ## [Unreleased].
 Opens $EDITOR if message is omitted.
+
+Types (Keep a Changelog):
+  added        New feature           (implies minor bump)
+  changed      Changed behaviour     (implies minor bump)
+  deprecated   Soon-to-be removed    (implies minor bump)
+  removed      Removed feature       (implies major bump)
+  fixed        Bug fix               (implies patch bump)
+  security     Security fix          (implies patch bump)
 
 Options:
   --pkg, -p <name>   Target package (required when folders are configured)
@@ -113,7 +127,7 @@ if (rawArgs[0] === '--complete') {
     console.log(allNames(root, config).join('\n'));
   } else if (countPositionals(words, cword) === 0) {
     const pkgAlreadySet = words.some(isPkgFlag);
-    const opts = hasFolders && !pkgAlreadySet ? ['--pkg', ...LEVELS] : LEVELS;
+    const opts = hasFolders && !pkgAlreadySet ? ['--pkg', ...SECTIONS] : [...SECTIONS];
     console.log(opts.join('\n'));
   }
   process.exit(0);
@@ -132,28 +146,29 @@ if (!pkg && hasFolders) {
   process.exit(1);
 }
 
-const [level, ...rest] = positionals;
+const [sectionInput, ...rest] = positionals;
 
-if (!level) {
+if (!sectionInput) {
   const usage = hasFolders
-    ? `fchange <patch|minor|major> ["message"] --pkg <name>`
-    : `fchange <patch|minor|major> ["message"]`;
-  console.error(`Usage: ${usage}`);
+    ? `fchange <type> ["message"] --pkg <name>`
+    : `fchange <type> ["message"]`;
+  console.error(`Usage: ${usage}\nTypes: ${SECTIONS.join(', ')}`);
   process.exit(1);
 }
 
-if (!LEVELS.includes(level)) {
-  console.error(`Invalid level "${level}". Use: patch, minor, major`);
+if (!(SECTIONS as readonly string[]).includes(sectionInput)) {
+  console.error(`Invalid type "${sectionInput}". Use: ${SECTIONS.join(', ')}`);
   process.exit(1);
 }
 
-const ctx = pkg ? `fchange ${level} --pkg ${pkg}` : `fchange ${level}`;
+const section = toSectionType(sectionInput as SectionInput);
+const ctx = pkg ? `fchange ${sectionInput} --pkg ${pkg}` : `fchange ${sectionInput}`;
 const message = rest.length > 0 ? rest.join(' ') : openInEditor(ctx);
 
 if (!message) {
   const usage = hasFolders
-    ? `fchange <patch|minor|major> "<message>" --pkg <name>`
-    : `fchange <patch|minor|major> "<message>"`;
+    ? `fchange <type> "<message>" --pkg <name>`
+    : `fchange <type> "<message>"`;
   console.error(`Usage: ${usage}`);
   process.exit(1);
 }
@@ -170,7 +185,7 @@ if (pkg) {
   changelogPath = path.join(root, 'CHANGELOG.md');
 }
 
-prependEntry(changelogPath, level, message);
+prependEntry(changelogPath, section, message);
 console.log(
-  `${path.relative(root, changelogPath).replace(/\\/g, '/')}\n  + - ${level}: ${message}`,
+  `${path.relative(root, changelogPath).replace(/\\/g, '/')}\n  + [${section}] ${message}`,
 );

@@ -18,56 +18,91 @@ describe('bumpVersion', () => {
 });
 
 describe('prependEntryToContent', () => {
-  it('inserts entry after existing [Unreleased] heading', () => {
-    const input = '# Changelog\n\n## [Unreleased]\n## [1.0.0] - 2024-01-01\n';
-    const result = prependEntryToContent(input, 'patch', 'fix typo');
-    expect(result).toContain('## [Unreleased]\n- patch: fix typo\n');
+  it('inserts entry under existing ### section', () => {
+    const input =
+      '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n\n## [1.0.0] - 2024-01-01\n';
+    const result = prependEntryToContent(input, 'Fixed', 'fix typo');
+    expect(result).toContain('### Fixed\n- fix typo\n');
   });
 
-  it('prepends to existing entries under [Unreleased]', () => {
-    const input = '# Changelog\n\n## [Unreleased]\n- patch: old fix\n';
-    const result = prependEntryToContent(input, 'minor', 'new feature');
-    expect(result).toContain('## [Unreleased]\n- minor: new feature\n- patch: old fix\n');
+  it('prepends to existing entries under same section', () => {
+    const input = '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- old fix\n';
+    const result = prependEntryToContent(input, 'Fixed', 'new fix');
+    expect(result).toContain('### Fixed\n- new fix\n- old fix\n');
+  });
+
+  it('creates new ### section in KAC order when missing', () => {
+    const input = '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- old fix\n';
+    const result = prependEntryToContent(input, 'Added', 'new feature');
+    // Added comes before Fixed in KAC order
+    expect(result).toContain('### Added\n- new feature');
+    expect(result.indexOf('### Added')).toBeLessThan(result.indexOf('### Fixed'));
+  });
+
+  it('appends new section after existing ones when it comes later in KAC order', () => {
+    const input = '# Changelog\n\n## [Unreleased] - minor\n\n### Added\n- feature\n';
+    const result = prependEntryToContent(input, 'Fixed', 'bug fix');
+    expect(result).toContain('### Fixed\n- bug fix');
+    expect(result.indexOf('### Added')).toBeLessThan(result.indexOf('### Fixed'));
   });
 
   it('creates [Unreleased] section when missing, after title', () => {
     const input = '# Changelog\n## [1.0.0] - 2024-01-01\n';
-    const result = prependEntryToContent(input, 'minor', 'new feature');
-    expect(result).toContain('## [Unreleased]\n- minor: new feature\n');
+    const result = prependEntryToContent(input, 'Added', 'new feature');
+    expect(result).toContain('## [Unreleased] - minor\n\n### Added\n- new feature\n');
     expect(result.indexOf('## [Unreleased]')).toBeLessThan(result.indexOf('## [1.0.0]'));
   });
 
   it('creates [Unreleased] section in empty changelog', () => {
-    const result = prependEntryToContent('# Changelog\n', 'patch', 'init');
-    expect(result).toContain('## [Unreleased]\n- patch: init\n');
+    const result = prependEntryToContent('# Changelog\n', 'Fixed', 'init');
+    expect(result).toContain('## [Unreleased] - patch\n\n### Fixed\n- init\n');
+  });
+
+  it('upgrades level when higher-level section is added', () => {
+    const input = '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- bug\n';
+    const result = prependEntryToContent(input, 'Added', 'feature');
+    expect(result).toContain('## [Unreleased] - minor');
+  });
+
+  it('does not downgrade level when lower-level section is added', () => {
+    const input = '# Changelog\n\n## [Unreleased] - major\n\n### Removed\n- thing\n';
+    const result = prependEntryToContent(input, 'Fixed', 'bug');
+    expect(result).toContain('## [Unreleased] - major');
+  });
+
+  it('Removed section implies major level', () => {
+    const result = prependEntryToContent('# Changelog\n', 'Removed', 'old api');
+    expect(result).toContain('## [Unreleased] - major');
   });
 });
 
 describe('computeRelease', () => {
-  it('uses patch level when all entries are patch', () => {
-    const content = '# Changelog\n\n## [Unreleased]\n- patch: fix bug\n\n## [1.0.0] - 2024-01-01\n';
+  it('uses level from [Unreleased] heading — patch', () => {
+    const content =
+      '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- fix bug\n\n## [1.0.0] - 2024-01-01\n';
     expect(computeRelease(content).newVersion).toBe('1.0.1');
   });
 
-  it('uses highest level — minor wins over patch', () => {
+  it('uses level from [Unreleased] heading — minor', () => {
     const content =
-      '# Changelog\n\n## [Unreleased]\n- patch: fix\n- minor: feat\n\n## [1.0.0] - 2024-01-01\n';
+      '# Changelog\n\n## [Unreleased] - minor\n\n### Added\n- feat\n\n## [1.0.0] - 2024-01-01\n';
     expect(computeRelease(content).newVersion).toBe('1.1.0');
   });
 
-  it('uses highest level — major wins over all', () => {
+  it('uses level from [Unreleased] heading — major', () => {
     const content =
-      '# Changelog\n\n## [Unreleased]\n- minor: feat\n- major: breaking\n\n## [1.0.0] - 2024-01-01\n';
+      '# Changelog\n\n## [Unreleased] - major\n\n### Removed\n- breaking\n\n## [1.0.0] - 2024-01-01\n';
     expect(computeRelease(content).newVersion).toBe('2.0.0');
   });
 
   it('starts from 0.0.0 when no previous version exists', () => {
-    const content = '# Changelog\n\n## [Unreleased]\n- minor: first release\n';
+    const content = '# Changelog\n\n## [Unreleased] - minor\n\n### Added\n- first release\n';
     expect(computeRelease(content).newVersion).toBe('0.1.0');
   });
 
   it('replaces [Unreleased] heading with versioned heading', () => {
-    const content = '# Changelog\n\n## [Unreleased]\n- patch: fix\n\n## [1.0.0] - 2024-01-01\n';
+    const content =
+      '# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- fix\n\n## [1.0.0] - 2024-01-01\n';
     const { updatedContent } = computeRelease(content);
     expect(updatedContent).not.toContain('## [Unreleased]');
     expect(updatedContent).toMatch(/## \[1\.0\.1\] - \d{4}-\d{2}-\d{2}/);
@@ -77,16 +112,16 @@ describe('computeRelease', () => {
     expect(() => computeRelease('# Changelog\n## [1.0.0] - 2024-01-01\n')).toThrow(ChangelogError);
   });
 
-  it('throws ChangelogError when [Unreleased] section has no entries', () => {
-    expect(() =>
-      computeRelease('# Changelog\n\n## [Unreleased]\n\n## [1.0.0] - 2024-01-01\n'),
-    ).toThrow(ChangelogError);
+  it('throws ChangelogError when [Unreleased] has no bump level', () => {
+    expect(() => computeRelease('# Changelog\n\n## [Unreleased]\n\n### Fixed\n- fix\n')).toThrow(
+      ChangelogError,
+    );
   });
 
-  it('ignores non-entry lines under [Unreleased]', () => {
-    const content =
-      '# Changelog\n\n## [Unreleased]\n\nSome note.\n- patch: real entry\n\n## [1.0.0]\n';
-    expect(computeRelease(content).newVersion).toBe('1.0.1');
+  it('throws ChangelogError when [Unreleased] section has no entries', () => {
+    expect(() =>
+      computeRelease('# Changelog\n\n## [Unreleased] - patch\n\n## [1.0.0] - 2024-01-01\n'),
+    ).toThrow(ChangelogError);
   });
 });
 
@@ -94,28 +129,37 @@ describe('extractVersionChangelog', () => {
   const content = [
     '# Changelog',
     '',
-    '## [Unreleased]',
-    '- patch: wip',
+    '## [Unreleased] - patch',
+    '',
+    '### Fixed',
+    '- wip',
     '',
     '## [1.2.0] - 2024-06-01',
-    '- minor: add search',
-    '- patch: fix typo',
+    '',
+    '### Added',
+    '- add search',
+    '',
+    '### Fixed',
+    '- fix typo',
     '',
     '## [1.1.0] - 2024-05-01',
-    '- minor: add login',
+    '',
+    '### Added',
+    '- add login',
     '',
   ].join('\n');
 
   it('returns the latest released version when no version given', () => {
     const result = extractVersionChangelog(content);
     expect(result?.version).toBe('1.2.0');
-    expect(result?.notes).toBe('- minor: add search\n- patch: fix typo');
+    expect(result?.notes).toContain('### Added');
+    expect(result?.notes).toContain('- add search');
   });
 
   it('returns notes for a specific version', () => {
     const result = extractVersionChangelog(content, '1.1.0');
     expect(result?.version).toBe('1.1.0');
-    expect(result?.notes).toBe('- minor: add login');
+    expect(result?.notes).toContain('- add login');
   });
 
   it('skips [Unreleased] when finding latest', () => {
@@ -128,11 +172,13 @@ describe('extractVersionChangelog', () => {
   });
 
   it('returns null when no versioned sections exist', () => {
-    expect(extractVersionChangelog('# Changelog\n\n## [Unreleased]\n- patch: wip\n')).toBeNull();
+    expect(
+      extractVersionChangelog('# Changelog\n\n## [Unreleased] - patch\n\n### Fixed\n- wip\n'),
+    ).toBeNull();
   });
 
   it('trims trailing blank lines from notes', () => {
-    const c = '# Changelog\n\n## [1.0.0] - 2024-01-01\n- patch: fix\n\n';
-    expect(extractVersionChangelog(c)?.notes).toBe('- patch: fix');
+    const c = '# Changelog\n\n## [1.0.0] - 2024-01-01\n\n### Fixed\n- fix\n\n';
+    expect(extractVersionChangelog(c)?.notes).toBe('### Fixed\n- fix');
   });
 });

@@ -11,12 +11,13 @@ pnpm typecheck    # type-check with tsgo (no emit)
 pnpm lint         # biome lint
 pnpm format       # biome format (writes)
 pnpm check        # biome lint + format (writes)
+pnpm release      # build, frelease, bump package.json, commit, tag, push → triggers npm publish
 ```
 
 Smoke-test a tool directly (requires a fchange.json or .fchangerc in cwd):
 
 ```bash
-node --experimental-strip-types src/fchange/fchange.mts patch "test message"
+node --experimental-strip-types src/fchange/fchange.mts fixed "test message"
 node --experimental-strip-types src/fcommit/fcommit.mts feat "test message"
 ```
 
@@ -45,7 +46,8 @@ Returns the first directory where any loader matches, or `null` if nothing is fo
 ### fchange
 
 - Fails if no config found (`--init` creates an empty `fchange.json`)
-- Writes `- level: message` under `## [Unreleased]` in CHANGELOG.md
+- Accepts a Keep a Changelog section type: `added`, `changed`, `deprecated`, `removed`, `fixed`, `security`
+- Writes entry under `### <Section>` in `## [Unreleased]`, upgrading the level in the heading as needed
 - Subcommands: `--init`, `completion bash`, `--complete`
 
 ### fcommit
@@ -58,7 +60,7 @@ Returns the first directory where any loader matches, or `null` if nothing is fo
 
 - Fails if no config found
 - Reads current version from latest `## [x.y.z]` heading in CHANGELOG (defaults to `0.0.0`)
-- Determines bump from highest level among `[Unreleased]` entries
+- Reads bump level from `## [Unreleased] - <level>` heading (set by `fchange`)
 - Subcommands: `completion bash`, `--complete`
 
 ## Config
