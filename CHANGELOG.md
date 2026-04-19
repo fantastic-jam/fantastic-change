@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] - major
+## [1.0.0] - 2026-04-19
 
 ### Added
 - fcommit and fcommit validate now accept the Conventional Commits breaking change marker (feat!: or feat(scope)!:)
